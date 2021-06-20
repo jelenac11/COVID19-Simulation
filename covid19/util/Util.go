@@ -22,7 +22,7 @@ func CalculateTime(version string, tasks *int, dim int) func() {
 func SaveStats() {
 	toWrite := ""
 	for i := 0; i < config.Days; i++ {
-		data := strconv.Itoa(config.Infected[i]) + " " + strconv.Itoa(config.Dead[i]) + " " + strconv.Itoa(config.Quarantine[i]) +
+		data := strconv.Itoa(i+1)+ " " + strconv.Itoa(config.Infected[i]) + " " + strconv.Itoa(config.Dead[i]) + " " + strconv.Itoa(config.Quarantine[i]) +
 			" " + strconv.Itoa(config.Tested[i]) + " " + strconv.Itoa(config.TestedPositive[i])
 		if i == 0 {
 			toWrite = data
