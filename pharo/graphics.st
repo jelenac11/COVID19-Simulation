@@ -1,6 +1,7 @@
 |path string splited map infected dead graphic ds1 ds2|
 
 path := 'C:\Users\Home\Documents\GitHub\COVID19-Simulation\covid19\files\stats.txt'.
+
 string := FileStream readOnlyFileNamed: path
 				do: [ :stream | stream contents ].
 splited := string splitOn: '|'.
