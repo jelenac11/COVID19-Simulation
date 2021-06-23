@@ -1,4 +1,4 @@
-|day path stringsplited map labeledData pie lb|
+|day path string splited map labeledData pie lb|
 day := 1.
 
 path := 'C:\Users\Home\Documents\GitHub\COVID19-Simulation\covid19\files\stats.txt'.

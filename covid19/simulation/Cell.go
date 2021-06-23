@@ -25,16 +25,15 @@ type Cell struct {
 func (cell *Cell) moveCell() {
 	up := cell.X - cell.Goal[0]
 	right := cell.Y - cell.Goal[1]
-
 	if math.Abs(float64(up)) <= 3 {
 		cell.X = cell.Goal[0]
 	} else {
 		cell.X += Sgn(float64(up)) * (-3)
 	}
 	if math.Abs(float64(right)) <= 3 {
-		cell.X = cell.Goal[1]
+		cell.Y = cell.Goal[1]
 	} else {
-		cell.Y += Sgn(float64(right)) * (-2)
+		cell.Y += Sgn(float64(right)) * (-3)
 	}
 }
 
@@ -76,12 +75,13 @@ func (cell *Cell) quarantinedEvent() {
 
 func (cell *Cell) dehospitalizeEvent() {
 	cell.Hospitalized = false
+	cell.SurvivalChance = 1 - config.Mortality
 }
 
 func (cell *Cell) infectionEvent() {
 	cell.Infected = config.INFECTED
 	cell.Incubation = config.Incubation
-	cell.Duration = config.Duration
+	cell.Duration = config.Duration - config.Incubation
 	config.InfectedCells++
 }
 

@@ -90,7 +90,7 @@ func main() {
 		fmt.Println(err7)
 		os.Exit(2)
 	}
-	checkArguments(0, 1, float64(tasks), "Number of tasks must be number between 0 and 1!")
+	checkArguments(0, math.MaxInt32, float64(tasks), "Number of tasks must be number between 0 and 1!")
 
 	config.ActiveDistancing = false
 

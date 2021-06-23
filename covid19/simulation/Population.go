@@ -45,54 +45,60 @@ func (population *Population) CreatePopulation() {
 			n++
 		}
 	}
+	for i := 1; i <= (config.Dim*config.Dim)/4; i++ {
+		idx := rand.Intn(len(population.Mesh))
+		population.Mesh[idx].Mobile = true
+	}
 }
 
 func (population *Population) InfectPatientZero() {
 	i := (population.Dim * (population.Dim / 2)) + (population.Dim / 2)
 	population.Mesh[i].Infected = config.INFECTED
-	population.Mesh[i].Duration = config.Duration
+	population.Mesh[i].Duration = config.Duration - config.Incubation
 }
 
 func (population *Population) UpdateSerial() {
 	defer util.CalculateTime("Serial", nil, population.Dim)()
-	newMash := make([]Cell, int(math.Pow(float64(population.Dim), 2)))
+	newMesh := make([]Cell, int(math.Pow(float64(population.Dim), 2)))
 	for i := 0; i < population.Dim; i++ {
 		for j := 0; j < population.Dim; j++ {
-			population.moveEntity(newMash, i, j)
-			population.updateCell(newMash, i, j)
+			population.moveEntity(newMesh, i, j)
 		}
 	}
-	population.Mesh = newMash
+	population.Mesh = newMesh
+	for i := 0; i < population.Dim; i++ {
+		for j := 0; j < population.Dim; j++ {
+			population.updateCell(newMesh, i, j)
+		}
+	}
+	population.Mesh = newMesh
 }
 
 func (population *Population) moveEntity(newMesh []Cell, i, j int) {
 	cell := population.Mesh[i*population.Dim+j]
 
 	if !cell.Mobile || cell.Quarantined || cell.Hospitalized {
+		newMesh[i*population.Dim + j] = cell
 		return
 	}
 
 	rng := rand.Float64()
-	if (cell.Goal[0] == cell.X && cell.Goal[1] == cell.Y) || firstMove {
+	if cell.Goal[0] == cell.X && cell.Goal[1] == cell.Y {
 		if rng < config.CROUD && !config.ActiveDistancing {
 			cell.Goal = [2]int{population.Dim / 2, population.Dim / 2}
 		} else {
-			goal := rand.Intn(population.Dim)
-			if goal%population.Dim != 0 {
-				cell.Goal = [2]int{goal/population.Dim + 1, goal%population.Dim + 1}
-			} else {
-				cell.Goal = [2]int{goal / population.Dim, population.Dim}
-			}
+			goalX := rand.Intn(population.Dim) + 1
+			goalY := rand.Intn(population.Dim) + 1
+			cell.Goal = [2]int{goalX, goalY}
+
 		}
 	}
 	cell.moveCell()
-
-	firstMove = false
+	newMesh[i*population.Dim + j] = cell
 }
 
 func (population *Population) UpdateParallel(tasks int) {
 	defer util.CalculateTime("Parallel", &tasks, population.Dim)()
-	newMash := make([]Cell, int(math.Pow(float64(population.Dim), 2)))
 	var waitgroup sync.WaitGroup
 	taskSize := population.Dim / tasks
 	for i := 0; i < tasks; i++ {
@@ -101,13 +107,17 @@ func (population *Population) UpdateParallel(tasks int) {
 		if i < tasks-1 {
 			coef = (i + 1) * taskSize
 		}
-		go population.updateMatrix(&waitgroup, newMash, i*taskSize, 0, coef, population.Dim)
+		go population.updateMatrix(&waitgroup, population.Mesh, i*taskSize, 0, coef, population.Dim)
 	}
 	waitgroup.Wait()
-	population.Mesh = newMash
 }
 
 func (population *Population) updateMatrix(waitgroup *sync.WaitGroup, newMesh []Cell, from1, from2, to1, to2 int) {
+	for i := from1; i < to1; i++ {
+		for j := from2; j < to2; j++ {
+			population.moveEntity(newMesh, i, j)
+		}
+	}
 	for i := from1; i < to1; i++ {
 		for j := from2; j < to2; j++ {
 			population.updateCell(newMesh, i, j)
@@ -154,14 +164,14 @@ func (population *Population) findNeighbours(x, y int) []int {
 }
 
 func (population *Population) RunTests() {
-	for i := 0; i < population.Dim*3/2; i++ {
+	for i := 0; i < (population.Dim*population.Dim)/25; i++ {
 		idx := rand.Intn(len(population.Mesh))
+		config.TestedCells++
 		if population.Mesh[idx].Infected == config.INFECTED && !population.Mesh[idx].Hospitalized {
-			config.TestedCells++
 			rng := rand.Float64()
 			if rng <= config.TEST_ACCURACY {
 				config.TestedPositiveCells++
-				if population.GetHospitalCount() == config.Capacity {
+				if population.GetHospitalCount() != config.Capacity {
 					population.Mesh[idx].hospitalizeEvent()
 				} else {
 					population.Mesh[idx].quarantinedEvent()
@@ -183,7 +193,7 @@ func (population *Population) GetHospitalCount() int {
 
 func checkPositions(x1, y1, x, y int) bool {
 	if (x1 == x && (y1 == (y-1) || y1 == (y+1))) || (y1 == y && (x1 == (x-1) || x1 == (x+1))) || (x1 == (x+1) &&
-		(y1 == (y+1) || y1 == (y-1))) || (x1 == (x-1) && (y1 == (y+1) || y1 == (y-1))) {
+		(y1 == (y+1) || y1 == (y-1))) || (x1 == (x-1) && (y1 == (y+1) || y1 == (y-1)) || (x1 == x && y == y1)) {
 		return true
 	}
 	return false
@@ -233,7 +243,7 @@ func (population *Population) Save(iter int, fileName string) {
 	}
 	for i := 0; i < population.Dim; i++ {
 		for j := 0; j < population.Dim; j++ {
-			if j != population.Dim - 1 {
+			if j != population.Dim-1 {
 				file.WriteString(strconv.Itoa(forPrinting[i*population.Dim+j]) + " ")
 			} else {
 				file.WriteString(strconv.Itoa(forPrinting[i*population.Dim+j]))
