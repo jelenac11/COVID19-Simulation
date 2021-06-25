@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-func CalculateTime(version string, tasks *int, dim int) func() {
+func CalculateTime(version string, tasks *int, height, width int) func() {
 	start := time.Now()
 	return func() {
 		str := ""
 		if tasks != nil {
 			str = fmt.Sprintf(" with %v threads ", *tasks)
 		}
-		fmt.Printf("%s took %v%s for dimensions: %vx%v\n", version, time.Since(start), str, dim, dim)
+		fmt.Printf("%s took %v%s for dimensions: %vx%v\n", version, time.Since(start), str, width, height)
 	}
 }
 

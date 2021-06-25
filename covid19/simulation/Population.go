@@ -11,11 +11,9 @@ import (
 	"sync"
 )
 
-var firstMove = true
-
 type Population struct {
-	Mesh []Cell
-	Dim  int
+	Mesh   []Cell
+	Dim int
 }
 
 func createCell(x, y int) (c Cell) {
@@ -37,28 +35,28 @@ func createCell(x, y int) (c Cell) {
 }
 
 func (population *Population) CreatePopulation() {
-	population.Mesh = make([]Cell, config.Dim*config.Dim)
+	population.Mesh = make([]Cell, population.Dim*population.Dim)
 	n := 0
-	for i := 1; i <= config.Dim; i++ {
-		for j := 1; j <= config.Dim; j++ {
+	for i := 1; i <= population.Dim; i++ {
+		for j := 1; j <= population.Dim; j++ {
 			population.Mesh[n] = createCell(i, j)
 			n++
 		}
 	}
-	for i := 1; i <= (config.Dim*config.Dim)/4; i++ {
+	for i := 1; i <= (population.Dim*population.Dim)/4; i++ {
 		idx := rand.Intn(len(population.Mesh))
 		population.Mesh[idx].Mobile = true
 	}
 }
 
 func (population *Population) InfectPatientZero() {
-	i := (population.Dim * (population.Dim / 2)) + (population.Dim / 2)
+	i := (population.Dim * (population.Dim / 2)) + (population.Dim/ 2)
 	population.Mesh[i].Infected = config.INFECTED
 	population.Mesh[i].Duration = config.Duration - config.Incubation
 }
 
 func (population *Population) UpdateSerial() {
-	defer util.CalculateTime("Serial", nil, population.Dim)()
+	defer util.CalculateTime("Serial", nil, population.Dim, population.Dim)()
 	newMesh := make([]Cell, int(math.Pow(float64(population.Dim), 2)))
 	for i := 0; i < population.Dim; i++ {
 		for j := 0; j < population.Dim; j++ {
@@ -78,7 +76,7 @@ func (population *Population) moveEntity(newMesh []Cell, i, j int) {
 	cell := population.Mesh[i*population.Dim+j]
 
 	if !cell.Mobile || cell.Quarantined || cell.Hospitalized {
-		newMesh[i*population.Dim + j] = cell
+		newMesh[i*population.Dim+j] = cell
 		return
 	}
 
@@ -94,11 +92,11 @@ func (population *Population) moveEntity(newMesh []Cell, i, j int) {
 		}
 	}
 	cell.moveCell()
-	newMesh[i*population.Dim + j] = cell
+	newMesh[i*population.Dim+j] = cell
 }
 
 func (population *Population) UpdateParallel(tasks int) {
-	defer util.CalculateTime("Parallel", &tasks, population.Dim)()
+	//defer util.CalculateTime("Parallel", &tasks, population.Dim, population.Dim)()
 	var waitgroup sync.WaitGroup
 	taskSize := population.Dim / tasks
 	for i := 0; i < tasks; i++ {

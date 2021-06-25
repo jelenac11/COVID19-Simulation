@@ -99,14 +99,14 @@ func main() {
 	population.InfectPatientZero()
 	config.Capacity = int(math.Pow(float64(config.Dim), 2) / 4)
 
-	for i := 0; i < config.Days; i++ {
+	for i := 1; i <= config.Days; i++ {
 		population.PrintMesh()
-		if population.GetHospitalCount() > int(float64(config.Capacity) * 0.8) {
+		if population.GetHospitalCount() > int(float64(config.Capacity)*0.8) {
 			config.ActiveDistancing = true
 			config.Quarantine = append(config.Quarantine, 1)
 		} else {
 			config.ActiveDistancing = false
-			config.Quarantine =  append(config.Quarantine, 0)
+			config.Quarantine = append(config.Quarantine, 0)
 		}
 		if tasks == 0 {
 			population.Save(i, "serial")
@@ -120,7 +120,7 @@ func main() {
 	}
 	util.SaveStats()
 }
-func  StrongAmdahlScaling() {
+func StrongAmdahlScaling() {
 	config.Dim = 1000
 	config.Duration = 14
 	config.Incubation = 5
@@ -128,25 +128,25 @@ func  StrongAmdahlScaling() {
 	config.Mortality = 0.1
 	config.Immunity = 0.7
 	config.Capacity = int(math.Pow(float64(config.Dim), 2) / 4)
-
 	threads := [4]int{1, 2, 4, 8}
+
 	population := simulation.Population{Dim: 1000}
 	population.CreatePopulation()
 	population.InfectPatientZero()
 	mesh := population.Mesh
 	for _, s := range threads {
 		population.UpdateParallel(s)
-		population.RunTests()
 		population.Mesh = mesh
+		population.RunTests()
 	}
 }
 
 func WeakGustafsonScaling() {
 	threads := [4]int{1, 2, 4, 8}
 	for _, s := range threads {
-		config.Dim = s * 1000
-		config.Capacity = int(math.Pow(float64(config.Dim), 2) / 4)
-		population := simulation.Population{Dim: s * 1000}
+		population := simulation.Population{}
+		config.Capacity = s * 1000 * 250
+		population = simulation.Population{Dim: s * 1000}
 		population.CreatePopulation()
 		population.InfectPatientZero()
 		population.UpdateParallel(s)
